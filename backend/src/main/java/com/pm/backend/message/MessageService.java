@@ -28,4 +28,17 @@ public class MessageService {
                 .map(MessageResponse::from)
                 .toList();
     }
+
+    @Transactional
+    public MessageResponse create(CreateMessageRequest request){
+        Message message = new Message();
+        message.setContent(request.content().trim());
+
+        Message saved = repository.saveAndFlush(message);
+        MessageResponse response = MessageResponse.from(saved);
+
+        // The event is delivered to the listener only after this transaction commits.
+        eventPublisher.publishEvent(new MessageCreateEvent(response));
+        return response;
+    }
 }
